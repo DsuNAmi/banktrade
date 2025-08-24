@@ -1,11 +1,12 @@
-#include " ui.h"
+#include "server.h"
 
-#include <iostream>
 
 int main(){
 
-    std::cout << "Hello my new work Server!" << std::endl;
+    auto bank_server = std::make_unique<Server>(12345);
 
+    bank_server->UIShow();
+    bank_server->Run();
 
     return EXIT_SUCCESS;
 }
