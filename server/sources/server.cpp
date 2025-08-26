@@ -27,6 +27,7 @@ void Session::DoRead(){
                 DoRead();
             }else{
                 std::cerr << "client disconnection." << std::endl;
+                std::lock_guard<std::mutex> lock(s_s_mutex);
                 if(!s_s_client_id.empty()){
                     s_s_clients.erase(s_s_client_id);
                 }
@@ -48,6 +49,11 @@ void Session::DoWrite(const std::string & message){
     );
 }
 
+std::string Session::GetClientId() const{
+    return s_s_client_id;
+}
+
+
 
 
 
@@ -62,18 +68,15 @@ Server::Server(
   s_connect_num(judgeConnectNum(connect_num)),
   s_running(false),
   s_io_context(),
-  s_acceptor(s_io_context, MakeEndpoint()),
-  s_threadpool(s_connect_num)
+  s_acceptor(s_io_context, MakeEndpoint())
 {
     
 }
 
 int Server::judgeConnectNum(int connect_num){
-    int res;;
-    if(connect_num < 5){res = 5;}
-    else if(connect_num > 100){res = 100;}
-    else{res = connect_num;}
-    return res;
+    if(connect_num < s_min_connect_num){return s_defalut_connect_num;}
+    else if(connect_num > s_max_connect_num){return s_max_connect_num;}
+    return connect_num;
 }
 
 
@@ -99,6 +102,10 @@ void Server::UIShow(){
 
 
 void Server::DoAccept(){
+    if (s_clients.size() >= static_cast<size_t>(s_connect_num)) {
+        std::cout << "Maximum number of clients reached. New connections will not be accepted." << std::endl;
+        return;
+    }
     s_acceptor.async_accept(
         [this](boost::system::error_code ec, boost::asio::ip::tcp::socket t_socket){
             if(!ec){
@@ -108,30 +115,67 @@ void Server::DoAccept(){
                 std::cerr << "Accept error: " << ec.message() << std::endl;
             }
         }
-
     );   
+}
+
+
+void Server::SendClientByClientId(const std::string & client_id, const std::string & message){
+    if(!s_running.load()){
+        std::cerr << "Sever is not running." << std::endl;
+    }
+    {
+        std::lock_guard<std::mutex> lock(s_server_mutex);
+        auto it = s_clients.find(client_id);
+        if(it != s_clients.end()){
+            it->second->SendMessage(message);
+        }else{
+            std::cerr << "Client:" << client_id << "is not exsiting." << std::endl;
+        }
+    }
+}
+
+void Server::Boardcast(const std::string & message){
+    if(!s_running.load()){
+        std::cerr << "Sever is not running." << std::endl;
+    }
+    std::unique_lock<std::mutex> lock(s_server_mutex, std::defer_lock);
+    lock.lock();
+    if(s_clients.empty()){
+        std::cerr << "No clients needs to send message: " << message << std::endl; 
+        return;
+    }
+    lock.unlock();
+    lock.lock();
+    for(const auto & [c_id, c_seesion] : s_clients){
+        c_seesion->SendMessage(message);
+    }
+    lock.unlock();
+}
+
+
+std::size_t Server::ClientCount() const {
+    std::lock_guard<std::mutex> lock(s_server_mutex);
+    return s_clients.size();
 }
 
 void Server::Run(){
     s_running.store(true);
     std::cout << "Server is running on " << s_host << ":" << s_port_num << std::endl;
     DoAccept();
-    for(int i = 0; i < s_connect_num; ++i){
-        s_threadpool.AddTask([this]{
-            s_io_context.run();
-        });
-    }
-    //手动阻塞主线程，防止程序退出
-    while(s_running.load()){
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-        if(s_threadpool.IsStop()){
-            s_running.store(false);
-        }
-    }
+    s_io_context.run();
 }
 
 void Server::Stop(){
+    s_running.store(false);
+    std::cout << "Server is stopping..." << std::endl;
     s_io_context.stop();
+}
+
+void Server::Restart(){
+    s_running.store(false);
+    std::cout << "Server is restarting..." << std::endl;
+    s_io_context.restart();
+    Run();
 }
 
 
