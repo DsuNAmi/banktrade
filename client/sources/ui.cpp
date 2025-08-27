@@ -1,4 +1,4 @@
-#include " ui.h"
+#include "ui.h"
 
 
 void UI::Setup(){
@@ -12,20 +12,86 @@ void UI::Setup(){
     std::cout << "Welcome to bank Trade!" << std::endl; 
 }
 
-void UI::Title(){
-    std::cout << "Please select your transcation:" << std::endl;
-    std::cout << std::format("{:-^30}\n","");
-    std::cout << std::format("{: <10}1.Transfer\n","");
-    std::cout << std::format("{: <10}2.Save Cash\n","");
-    std::cout << std::format("{: <10}3.Withdraw Cash\n","");
-    std::cout << std::format("{:-^30}\n","");
+LoginType UI::Login(const std::shared_ptr<Net> & client_net){
+    auto changeLoginType = [&client_net]()->LoginType{
+        std::cout << "input type (1 - 3) to change your login type" << std::endl;
+        auto inputWay = [&]()->LoginType{
+            std::string username;
+            std::string password;
+            std::string r_password;
+            bool input_flag = false;
+            bool quit_button = false;
+            while(!input_flag && !quit_button){
+                std::cout << "Enter username(Input <no-name> to quit) : \n"; 
+                std::getline(std::cin, username);
+                if(username == "<no-name>"){
+                    quit_button = true;
+                    break;
+                }
+                std::cout << "Enter password : \n";
+                std::getline(std::cin, password);
+                std::cout << "Again password : \n";
+                std::getline(std::cin, r_password);
+                if(password.empty() || password != r_password){
+                    std::cout << "password is not same";
+                    username.clear();
+                    password.clear();
+                    r_password.clear();
+                    continue;
+                }
+                std::string login_info = std::format("username[{}]password[{}]",username, r_password);
+                client_net->Send(login_info);
+                // actually, need to judge the server responed, but no server now
+                std::cout << "Login Successfully!" <<client_net->Receive() << std::endl;
+                input_flag = true;
+            }
+            return quit_button ? LoginType::QUIT : LoginType::INPUT;
+        };
+        auto faceWay = []()->LoginType{
+            std::cout << "scan your face." << std::endl;
+            return LoginType::SCANFACE; 
+        };
+        auto fingerWay = []()->LoginType{
+            std::cout << "put your finger." << std::endl;
+            return LoginType::FINGER;
+        };
+        int login_type = 1;
+        std::cin >> login_type;
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
+        if(1 == login_type){
+            return inputWay();
+        }else{
+            switch (login_type)
+            {
+            case 2:
+                return faceWay();
+            case 3:
+                return fingerWay();
+            default:
+                return LoginType::WRONG;
+            }
+        }
+
+        return LoginType::QUIT;
+    };
+
+    LoginType res_type = LoginType::QUIT;
+
+    while(static_cast<bool>(res_type = changeLoginType()) && res_type == LoginType::QUIT);
+
+    return res_type;
+}
+
+
+void UI::Title(const std::shared_ptr<Client> & client){
+    std::cout << "Welcome " << client->GetName() << std::endl;
 }
 
 
 void UI::Run(){
     while(true){
         int transcation_type;
-        std::cout << "Enter the number of your transcation type (1 - 3)" << std::endl;
+        std::cout << "Enter the number of your transcation type (1 - 5)" << std::endl;
         std::cout << "Enter 0 to exit." << std::endl;
         std::cin >> transcation_type;
         if(0 == transcation_type){

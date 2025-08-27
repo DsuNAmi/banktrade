@@ -6,9 +6,6 @@
 
 
 std::string Protocol::GetMessage() const{
-    if(p_message.empty()){
-        return "";
-    }
     return p_message;
 }
 
@@ -69,25 +66,26 @@ void Protocol::GetHeader(boost::property_tree::ptree & protocol_tree){
     std::istringstream buff(p_header);
     boost::property_tree::ptree npt;
     boost::property_tree::read_json(buff, npt);
-    p_type = npt.get<ProtocolType>("protocol_type");
+    p_type = npt.get<int>("protocol_type");
     protocol_tree.put("protocol_type",p_type);
-    protocol_tree.put("sub_type",npt.get<ProtocolType>("sub_type"));
+    protocol_tree.put("sub_type",npt.get<int>("sub_type"));
 }
 
 void Protocol::GetBody(boost::property_tree::ptree & protocol_tree){
-    if(p_type == ProtocolType::CUSTOMER){
+    ProtocolType tmp_type = static_cast<ProtocolType>(p_type);
+    if(tmp_type == ProtocolType::CUSTOMER){
         //Customer 
-    }else if(p_type == ProtocolType::TRANSCTION){
+    }else if(tmp_type == ProtocolType::TRANSCTION){
         //Transcation
-    }else if(p_type == ProtocolType::CONNECT){
+    }else if(tmp_type == ProtocolType::CONNECT){
         //string Defalut
-    }else if(p_type == ProtocolType::DISCONNECT){
+    }else if(tmp_type == ProtocolType::DISCONNECT){
         //string Defalut
     }
 }
 
 void Protocol::GetTail(boost::property_tree::ptree & protocol_tree){
-    std::istringstream buff(p_header);
+    std::istringstream buff(p_tail);
     boost::property_tree::ptree npt;
     boost::property_tree::read_json(buff, npt);
     protocol_tree.put("client_id",npt.get<std::string>("client_id"));

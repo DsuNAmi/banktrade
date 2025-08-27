@@ -1,11 +1,12 @@
 #include "net.h"
 
 
-Net::Net(const std::string & host, unsigned short port)
-: n_io_context(), n_socket(n_io_context)
+Net::Net(std::string host, unsigned short port)
+: n_io_context(), n_socket(n_io_context),
+n_host(std::move(host)),n_port(port)
 {
     boost::asio::ip::tcp::resolver resolver(n_io_context);
-    auto endpoints = resolver.resolve(host,std::to_string(port));
+    auto endpoints = resolver.resolve(n_host,std::to_string(n_port));
     boost::asio::connect(n_socket, endpoints);   
 }
 

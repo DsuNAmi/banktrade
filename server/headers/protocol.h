@@ -25,8 +25,8 @@ class Protocol{
 
         template<typename BodyType>
         void ConstructMessage(const boost::property_tree::ptree & protocol_tree){
-            p_type = protocol_tree.get<ProtocolType>("type",ProtocolType::UNKNOWN);
-            if(p_type == ProtocolType::UNKNOWN){return;}
+            p_type = protocol_tree.get<int>("type",static_cast<int>(ProtocolType::UNKNOWN));
+            if(static_cast<ProtocolType>(p_type) == ProtocolType::UNKNOWN){return;}
             SetHeader(protocol_tree.get<int>("sub_type", -1));
             SetBody(protocol_tree.get<BodyType>("body").Seralize());
             SetTail(protocol_tree.get<std::string>("client_id",""), 
@@ -43,7 +43,7 @@ class Protocol{
         template<typename BodyType>
         void DeconstructMessage(const std::string & message, boost::property_tree::ptree & protocol_tree){
             if(!ParseMessage(message)){
-                p_type = ProtocolType::ERROR;
+                p_type = static_cast<int>(ProtocolType::ERROR);
                 p_header.clear();
                 p_body.clear();
                 p_tail.clear();
@@ -71,7 +71,7 @@ class Protocol{
         }
 
         ProtocolType GetType() const{
-            return p_type;
+            return static_cast<ProtocolType>(p_type);
         }
         
     private:
@@ -81,6 +81,6 @@ class Protocol{
 
         std::string p_message;
         
-        ProtocolType p_type;
+        int p_type;
         std::size_t p_length;
 };
