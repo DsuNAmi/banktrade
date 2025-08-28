@@ -4,13 +4,7 @@
 
 int main(){
     
-    auto clinet_net = std::make_shared<Net>("localhost",12341);
-    UI::Setup();
-
-
-    std::cout << static_cast<int>(UI::Login(clinet_net)) << std::endl;
-    
-
-
+    std::shared_ptr<Client> sp_client = std::make_shared<Client>("localhost", 12345);
+    sp_client->Run();
     return EXIT_SUCCESS;
 }

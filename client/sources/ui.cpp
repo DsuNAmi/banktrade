@@ -88,7 +88,7 @@ void UI::Title(const std::shared_ptr<Client> & client){
 }
 
 
-void UI::Run(){
+void UI::MainWindow(){
     while(true){
         int transcation_type;
         std::cout << "Enter the number of your transcation type (1 - 5)" << std::endl;

@@ -7,6 +7,7 @@
 class Net {
 public:
     Net(std::string host, unsigned short port);
+    void Connect();
     void Send(const std::string& message);
     std::string Receive();
 

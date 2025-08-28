@@ -18,6 +18,7 @@ enum class LoginType{
     QUIT
 };
 
+class Client;
 
 
 class UI{
@@ -27,7 +28,7 @@ class UI{
         static LoginType Login(const std::shared_ptr<Net> & client_net);
 
         static void Title(const std::shared_ptr<Client> & client);
-        static void Run();
+        static void MainWindow();
         static void ClearScreen();
         static void Exit();
 
