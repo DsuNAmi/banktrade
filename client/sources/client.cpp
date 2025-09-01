@@ -32,9 +32,69 @@ void Client::ConnectServer(){
 
 }
 
-void Client::Disconnect(){
-    
+
+LoginType Client::Login(std::string && username, std::string && password, LoginType login_type){
+    if(login_type == LoginType::INPUT){
+        if(username.empty() || password.empty()){
+            show_error(ErrorType::WARNNING,"No value in username or password");
+            //remain somethings
+            return LoginType::QUIT;
+        }
+        
+        //con -> login -> protocol
+        std::string loginInfo = std::format("username[{}]password[{}]",username, password);
+        c_sp_net->Send(loginInfo);
+        std::string server_res = c_sp_net->Receive();
+        if(server_res.empty()){
+            //unkonwn error
+            show_error(ErrorType::ERROR, "unkonwn_error");
+            return LoginType::WRONG;
+        }else if(server_res == "100"){
+            show_error(ErrorType::ERROR, "Wrong Password");
+            return LoginType::QUIT;
+        }else if(server_res == "101"){
+            show_error(ErrorType::ERROR, "username is not existed.");
+            return LoginType::QUIT;
+        }else{
+            //deparse the packet
+            //code = 200
+            show_error(ErrorType::INFO, "Login successful!");
+            c_username = std::move(username);
+            return LoginType::INPUT;
+        }
+    }else{
+        switch (login_type)
+        {
+        case LoginType::FINGER:
+            show_error(ErrorType::INFO, "Finger is right.");
+            return login_type;
+        case LoginType::SCANFACE:
+            show_error(ErrorType::INFO, "face is right.");
+            return login_type;
+        default:
+            show_error(ErrorType::WARNNING, "unkown wrong.");
+            return LoginType::WRONG;
+        }
+    }
 }
+
+
+void Client::EncryptStr(std::string & plain_text){
+    //do nothing for now 
+}
+
+
+TranscationType Client::Transcation(std::function<TranscationType(const boost::property_tree::ptree & pt)> func,
+                                    const boost::property_tree::ptree & pt){
+    TranscationType res_type;
+    std::ostringstream transcation_information;
+    boost::property_tree::write_json(transcation_information, pt, false);
+    c_sp_net->Send(transcation_information.str());
+    std::string res_server = c_sp_net->Receive();
+    // deseralize the res_server
+    return res_type;
+}
+
 
 
 void Client::Run(){
@@ -54,16 +114,14 @@ void Client::Run(){
             };
     c_connect_overtime = 0;
     if(c_connect_status.load()){
-        UI::Login(c_sp_net);
-        std::cout << "GetName from server : \n";
-        c_username = "Server::GetName()";
+        UI::Login(shared_from_this());
         UI::Title(shared_from_this());
-        UI::ClearScreen();
         //add a thread
-        c_pools.AddTask(UI::MainWindow);
+        // c_pools.AddTask(UI::MainWindow);
         //and you can do otherthings
         //check the connection
-        
+        //Keep Connection
+        //snneze the user selection
     }else{
         std::cout << std::endl;
         std::cerr << "Failed to connect to server." << std::endl;

@@ -12,8 +12,8 @@ void UI::Setup(){
     std::cout << "Welcome to bank Trade!" << std::endl; 
 }
 
-LoginType UI::Login(const std::shared_ptr<Net> & client_net){
-    auto changeLoginType = [&client_net]()->LoginType{
+LoginType UI::Login(const std::shared_ptr<Client> & client){
+    auto changeLoginType = [&client]()->LoginType{
         std::cout << "input type (1 - 3) to change your login type" << std::endl;
         auto inputWay = [&]()->LoginType{
             std::string username;
@@ -40,9 +40,10 @@ LoginType UI::Login(const std::shared_ptr<Net> & client_net){
                     continue;
                 }
                 std::string login_info = std::format("username[{}]password[{}]",username, r_password);
-                client_net->Send(login_info);
+                client->Send(login_info);
                 // actually, need to judge the server responed, but no server now
-                std::cout << "Login Successfully!" <<client_net->Receive() << std::endl;
+                std::cout << "Login Successfully!" << client->Receive() << std::endl;  
+                client->SetName(username);
                 input_flag = true;
             }
             return quit_button ? LoginType::QUIT : LoginType::INPUT;

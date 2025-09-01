@@ -10,22 +10,13 @@
 #include <limits>
 
 
-enum class LoginType{
-    INPUT = 1,
-    SCANFACE,
-    FINGER,
-    WRONG,
-    QUIT
-};
-
-class Client;
 
 
 class UI{
     public:
         static void Setup();
 
-        static LoginType Login(const std::shared_ptr<Net> & client_net);
+        static LoginType Login(const std::shared_ptr<Client> & client);
 
         static void Title(const std::shared_ptr<Client> & client);
         static void MainWindow();
